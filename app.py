@@ -3,28 +3,32 @@ import pymongo
 import requests
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.neighbors import NearestNeighbors
+
 app = Flask(__name__)
+
 MONGO_URI = "mongodb+srv://theprithivraj:h1h2h3h4@prithiv.xaz8u.mongodb.net/?retryWrites=true&w=majority&appName=prithiv"
 client = pymongo.MongoClient(MONGO_URI)
 db = client['LinkUpDB']
 collection = db['users']
-API_KEY = "c0ef56ccca986fa61939b6ef12edfd14"  
-@app.before_first_request
-def before_first_request():
-    try:
-        client.server_info() 
-    except pymongo.errors.ServerSelectionTimeoutError as e:
-        return jsonify({"message": "Database connection failed", "error": str(e)}), 500
+API_KEY = "c0ef56ccca986fa61939b6ef12edfd14"
+try:
+    client.server_info()
+    print("Database connection successful")
+except pymongo.errors.ServerSelectionTimeoutError as e:
+    print(f"Database connection failed: {e}")
+
 @app.route('/warmup', methods=['GET'])
 def warmup():
     try:
-        client.server_info() 
+        client.server_info()
         return jsonify({"message": "App is warmed up and ready!"})
     except pymongo.errors.ServerSelectionTimeoutError as e:
         return jsonify({"message": "Database connection failed", "error": str(e)}), 500
+
 @app.route('/predict2', methods=['GET'])
 def predict2():
     return "Hi, this is a test route!"
+
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
     try:
@@ -38,6 +42,7 @@ def upload_image():
             return jsonify({'message': 'Image uploaded successfully', 'image_url': image_url})
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'error': str(e)}), 500
+
 def upload_to_imgbb(image_file):
     """Uploads the image file to ImgBB and returns the URL."""
     url = 'https://api.imgbb.com/1/upload'
@@ -47,11 +52,12 @@ def upload_to_imgbb(image_file):
     if response.status_code == 200:
         result = response.json()
         if result['success']:
-            return result['data']['url'] 
+            return result['data']['url']
         else:
             raise Exception(f"Error: {result['error']['message']}")
     else:
         raise Exception(f"Failed to upload image. Status Code: {response.status_code}")
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -90,8 +96,10 @@ def predict():
         return jsonify({'message': 'Database error', 'error': str(e)}), 500
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'error': str(e)}), 500
+
 @app.errorhandler(Exception)
 def handle_error(error):
     return jsonify({"message": "An error occurred", "error": str(error)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
